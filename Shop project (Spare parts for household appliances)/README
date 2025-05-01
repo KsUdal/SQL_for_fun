@@ -1,0 +1,7 @@
+The database contains information about suppliers, the different categories of products they supply, customers, their orders, and reviews.
+shop.add_customer stored procedure, when called, adds a new user to the table if he is not already there
+shop.delete_provider stored procedure, when called, deletes a supplier who does not have products in
+the shop.counter_of_bad stored procedure, when called, for each product by its id, counts reviews that have 1 star, saves data in the auxiliary table shop.sup_bad
+shop.suplies_in_order sorts orders by id and outputs for each which products are in it (view)
+shop.recount_stars function recalculates reviews with 1 star after adding a new review (trigger)
+shop.stars_check function removes products from the store (puts 'NO' in stock) if The product has a low rating (more than one review with 1 star), triggered after updating the shop.sup_bad table (trigger)
