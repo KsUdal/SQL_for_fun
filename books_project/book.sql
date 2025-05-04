@@ -170,3 +170,28 @@ WHERE amount IN (
         GROUP BY amount 
         HAVING count(amount) = 1
       );
+
+/*Вывести информацию о книгах(автор, название, цена), цена которых 
+меньше самой большой из минимальных цен, вычисленных для каждого автора.*/
+SELECT author, title, price
+FROM book
+WHERE price < ANY (
+        SELECT AVG(price) 
+        FROM book 
+        GROUP BY author 
+      );
+
+/*Посчитать сколько и каких экземпляров книг нужно заказать поставщикам, чтобы на складе стало 
+одинаковое количество экземпляров каждой книги, равное значению самого большего 
+количества экземпляров одной книги на складе. Вывести название книги, ее автора, 
+текущее количество экземпляров на складе и количество заказываемых экземпляров книг. 
+Последнему столбцу присвоить имя Заказ. В результат не включать книги, которые заказывать не нужно.*/
+SELECT title, author, amount, 
+      (SELECT MAX(amount) FROM book) - amount AS Заказ 
+FROM book
+WHERE ABS(amount - (SELECT MAX(amount) FROM book)) >0;
+
+-- Определить стоимость покупки, если купить самую дешевую книгу каждого автора.
+SELECT SUM(price)
+FROM book
+WHERE price = ANY(SELECT MIN(price) FROM book GROUP BY author);
