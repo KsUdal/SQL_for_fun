@@ -47,3 +47,78 @@ SELECT DISTINCT name
 FROM trip
 WHERE city = 'Москва'
 ORDER BY name;
+
+/*Для каждого города посчитать, сколько раз сотрудники в нем были.  Информацию вывести в отсортированном 
+в алфавитном порядке по названию городов. Вычисляемый столбец назвать Количество*/
+SELECT city, COUNT(name) AS Количество
+FROM trip
+GROUP BY city
+ORDER BY city;
+
+/*Вывести два города, в которых чаще всего были в командировках сотрудники. 
+Вычисляемый столбец назвать Количество.*/
+SELECT city, COUNT(name) AS Количество
+FROM trip
+GROUP BY city
+ORDER BY COUNT(name) DESC
+LIMIT 2;
+
+/*Вывести информацию о командировках во все города кроме Москвы и Санкт-Петербурга (фамилии и 
+инициалы сотрудников, город ,  длительность командировки в днях, при этом первый 
+и последний день относится к периоду командировки). Последний столбец назвать Длительность. 
+Информацию вывести в упорядоченном по убыванию длительности поездки, 
+а потом по убыванию названий городов (в обратном алфавитном порядке).*/
+SELECT name, city, DATEDIFF(date_last, date_first)+1 AS Длительность -- NOT FOR POSTGRESQL
+--SELECT name, city, DATE_PART('day', date_last::timestamp - date_first::timestamp) + 1 AS Длительность
+FROM trip
+WHERE city <> 'Москва' AND city <> 'Санкт-Петербург'
+ORDER BY DATEDIFF(date_first, date_last), city DESC; -- NOT FOR POSTGRESQL
+--ORDER BY DATE_PART('day', date_last::timestamp - date_first::timestamp), city DESC; -- FOR POSTGRESQL
+
+/*Вывести информацию о командировках сотрудника(ов), которые были самыми короткими по времени. 
+В результат включить столбцы name, city, date_first, date_last.*/
+SELECT name, city, date_first, date_last
+FROM trip
+WHERE DATEDIFF(date_last, date_first) = (
+    SELECT MIN(DATEDIFF(date_last, date_first))
+    FROM trip
+    );
+
+/*Вывести информацию о командировках, начало и конец которых относятся к одному месяцу 
+(год может быть любой). В результат включить столбцы name, city, date_first, date_last. 
+Строки отсортировать сначала  в алфавитном порядке по названию города, а затем по фамилии сотрудника .*/
+SELECT name, city, date_first, date_last
+FROM trip
+WHERE MONTH(date_first) = MONTH(date_last) -- NOT FOR POCTGRESQL
+ORDER BY city, name;
+-- FOR POSTGRESQL WE USE EXTRACT(MONTH FROM date)
+
+/*Вывести название месяца и количество командировок для каждого месяца. 
+Считаем, что командировка относится к некоторому месяцу, 
+если она началась в этом месяце. Информацию вывести сначала в отсортированном 
+по убыванию количества, а потом в алфавитном порядке по названию месяца виде. 
+Название столбцов – Месяц и Количество.*/
+SELECT MONTHNAME(date_first) AS Месяц, COUNT(date_first) AS Количество
+FROM trip
+GROUP BY MONTHNAME(date_first)
+ORDER BY COUNT(date_first) DESC, MONTHNAME(date_first);
+
+/*Вывести сумму суточных (произведение количества дней командировки и размера суточных) для командировок, 
+первый день которых пришелся на февраль или март 2020 года.
+Значение суточных для каждой командировки занесено в столбец per_diem. 
+Вывести фамилию и инициалы сотрудника, город, первый день командировки и сумму суточных. 
+Последний столбец назвать Сумма. Информацию отсортировать сначала  
+в алфавитном порядке по фамилиям сотрудников, а затем по убыванию суммы суточных.*/
+SELECT name, city, date_first, per_diem*(DATEDIFF(date_last, date_first)+1) AS Сумма
+FROM trip
+WHERE MONTH(date_first) IN ('2', '3') AND YEAR(date_first) = 2020
+ORDER BY name, per_diem*(DATEDIFF(date_last, date_first)+1) DESC;
+
+/*Вывести фамилию с инициалами и общую сумму суточных, полученных за все командировки 
+для тех сотрудников, которые были в командировках больше чем 3 раза, 
+в отсортированном по убыванию сумм суточных виде. Последний столбец назвать Сумма.*/
+SELECT name, SUM(per_diem*(DATEDIFF(date_last, date_first)+1)) AS Сумма
+FROM trip
+GROUP BY name
+HAVING count(city) > 3
+ORDER BY SUM(per_diem*(DATEDIFF(date_last, date_first)+1)) DESC;
